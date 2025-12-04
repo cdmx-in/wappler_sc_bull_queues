@@ -6,6 +6,7 @@ const { toSystemPath } = require('../../../lib/core/path');
 const Queue = require('bull');
 const config = require('../../../lib/setup/config');
 const bullLogging = require('./bull_logging.js');
+const { CronJob } = require('cron');
 
 var console_logging = 'error';
 var file_logging = 'none';
@@ -138,6 +139,9 @@ exports.create_queue = async function(options) {
             concurrent_jobs = defaultConcurrency;
         }
 
+        let autostart = this.parseOptional(options.autostart, 'boolean', false);
+        bq_logger.debug('autostart: ' + autostart);
+
         if (!workerCounts[queueName]) {
             bq_logger.debug('Queue worker does not exist');
             if (bullQueues[queueName]) {
@@ -161,6 +165,13 @@ exports.create_queue = async function(options) {
             if (jobscount) {
                 bq_logger.info('Queue ' + queueName + ' created');
                 bq_logger.debug('Create queue finish');
+                
+                // Log autostart status - Bull handles job-level locking internally via Redis
+                // so multiple replicas can safely process the same queue without duplicate execution
+                if (autostart) {
+                    bq_logger.info('Queue ' + queueName + ' autostart enabled: Workers attached and ready to process jobs');
+                }
+                
                 return { "response": 'Queue ' + queueName + ' created' };
             } else {
                 bq_logger.info(queueName + ' NOT created');

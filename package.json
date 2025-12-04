@@ -18,8 +18,9 @@
         "publish-dry-run": "npm publish ./dist --access public --dry-run"
     },
     "dependencies": {
-        "redis": "latest",
+        "redis": "^4.7.x",
         "bull": "4.15.x",
+        "cron": "^3.1.x",
         "winston": "3.13.x",
         "winston-daily-rotate-file": "5.0.x"
     }
