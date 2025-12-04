@@ -7,6 +7,7 @@ Wappler Bull Queues enables the creation and management of multiple queues to of
 
 ## Requirements
 - A working Redis connection, specified in the Wappler server config or via environment variables.
+- Node.js dependencies: Bull (4.15.x), Redis (^4.7.x), Cron (^3.1.x), Winston (3.13.x)
 
 ---
 
@@ -50,10 +51,11 @@ Supports three types of logging with levels: `error`, `warn`, `info`, `debug`. L
 
 **Queue Parameters:**
 - **Queue name**: Unique identifier for the queue.
-- **Number of concurrent jobs**: How many jobs run in parallel (default: 5).
+- **Number of concurrent jobs**: How many jobs run in parallel (default: 5). Safe for multi-replica deployments.
 - **Max jobs**: Maximum jobs in a given duration.
 - **Duration for max jobs**: Milliseconds for rate limiting.
 - **Processor type**: `'library'` (default) or `'api'`.
+- **Autostart**: Automatically start processing jobs when the queue is created (default: true).
 
 **Rate Limiting Example:**
 > To limit to 1 request per second, set Max jobs = 1, Duration = 1000.
@@ -96,8 +98,15 @@ Supports three types of logging with levels: `error`, `warn`, `info`, `debug`. L
 ### Add Job API
 - Adds a job to a queue, executing the specified API File with POST values.
 - The job ID is available as `$_POST.id`.
-- Supports all advanced job options as above.
+- Supports all advanced job options as above, including full repeatable job support.
 - Responds with the job ID.
+
+#### Repeatable Jobs Support
+Add Job API now fully supports creating repeatable jobs with cron patterns or fixed intervals:
+- **Cron Patterns**: Use standard cron syntax (e.g., `0 0 * * *` for daily at midnight)
+- **Fixed Intervals**: Specify repeat interval in milliseconds
+- **Repeat Limits**: Set maximum number of executions
+- **Job Naming**: Provide unique names for repeatable jobs to manage them later
 
 ---
 
@@ -137,8 +146,8 @@ Supports three types of logging with levels: `error`, `warn`, `info`, `debug`. L
 ---
 
 ### Repeatable Jobs
-- **Get Repeatable Jobs**: List all repeatable jobs for a queue.
-- **Remove Repeatable Job**: Remove a repeatable job from a queue by name.
+- **Get Repeatable Jobs**: List all repeatable jobs for a queue, including their schedules and next execution times.
+- **Remove Repeatable Job**: Remove a repeatable job from a queue by its unique name.
 
 ---
 
@@ -147,4 +156,7 @@ Supports three types of logging with levels: `error`, `warn`, `info`, `debug`. L
 - Removes all jobs from the queue (running jobs will complete).
 - Resets the job ID back to 1.
 
+---
 
+## Multi-Replica Safety
+This extension is designed to be safe for multi-replica deployments. Bull's built-in atomic operations ensure that jobs are processed exactly once across multiple instances. The default concurrency of 5 jobs per replica is appropriate and won't cause conflicts in distributed environments.
